@@ -1,0 +1,91 @@
+React.js (or simply React) is an open-source JavaScript library used for building user interfaces, especially for single-page applications (SPAs). It’s maintained by Meta (formerly Facebook) and a community of developers.
+
+Key Features of React
+---------------------
+1. Component-based architecture: UI is built using reusable pieces called components.
+2. Declarative syntax: You describe what the UI should look like, and React updates it efficiently when the data changes.
+3. Virtual DOM: React uses a virtual version of the DOM to improve performance by minimizing direct manipulation of the actual DOM.
+4. JSX: React uses JSX (JavaScript XML), a syntax extension that allows you to write HTML-like code inside JavaScript.
+
+Virtual DOM:
+------------
+
+The Virtual DOM is a lightweight JavaScript representation of the real DOM. In React, whenever the state or props of a component change, a new Virtual DOM is created. React then compares this new Virtual DOM with the previous one using a ---diffing algorithm--- to identify what changed. Only those specific changes are then updated in the actual DOM, which makes UI updates faster and more efficient.
+
+
+When you create a React component, React renders a virtual version of the DOM in memory, not directly to the screen. It’s a plain JavaScript object that mimics the structure of the actual DOM.
+
+
+
+JSX
+---
+
+JSX stands for JavaScript XML. It’s a syntax extension for JavaScript that allows us to write HTML-like code inside JavaScript files. Behind the scenes, JSX gets transpiled by tools like Babel into regular JavaScript using React.createElement() calls. So while it looks like HTML, it’s actually JavaScript under the hood.
+
+It lets you mix HTML and JavaScript logic together in one place.
+
+
+React Hooks
+-----------
+
+React Hooks are functions that let you use state, lifecycle features, and other React capabilities inside functional components, which previously were only available in class components. Before hooks, if you wanted to use state or lifecycle methods, you had to use class components.
+
+Functionalities cover by React Hooks
+------------------------------------
+1. State Management : useState lets you store and update state inside a functional component.
+2. Lifecycle Methods
+3. Context Access : useContext lets you read values from a React Context without nesting Context.Consumer
+4. Ref and DOM Access : useRef allows you to Access DOM elements directly (like document.querySelector, elements.target etc.)
+5. Performance Optimization
+6. Reducer-based State (like Redux)
+7. Custom Hooks
+
+
+2. Lifecycle Methods:
+---------------------
+useEffect replaces lifecycle methods like:
+> componentDidMount
+> componentDidUpdate
+> componentWillUnmount
+You can use it to fetch data, set timers, add/remove event listeners, etc.
+
+5. Performance Optimization
+---------------------------
+> useMemo: Caches expensive calculations so they're not re-run every render.
+> useCallback: Memoizes functions so they don’t get recreated unnecessarily.
+> Helps with avoiding unnecessary re-renders or heavy computations.
+
+
+React state
+-----------
+React state is an object that holds data or values that can change over time and affect what gets rendered on the screen.
+
+
+@reduxjs/toolkit
+----------------
+
+1. Create a Global store to export through the <provider/> in your requsite component.
+2. create a action reducers using createSlice with initial state and state update functions. And export the action functions and action reducers
+3. Import the action reducer in global store to combineReducers and configure store by which this reducer will available in child component to modify the state.
+4. to use this reducer in child component you have to import the sate from global root store and action from action reducer. after this you can update the sate only within a component using useDispatch function
+
+By ChatGpt-------------------------
+1. Create a global store and provide it to your app using <Provider> from react-redux.
+Use configureStore() from @reduxjs/toolkit to set up the store.
+Wrap your app (usually in index.js or App.js) with <Provider store={store}> to make the Redux state available to all components.
+2. Create a slice using createSlice() with an initial state and reducers (action functions). Export the action creators and the reducer.
+3. Import the reducer in your store and add it to the reducer object. If you have multiple reducers, configureStore internally handles combineReducers for you.
+4. In child components, use useSelector to access state from the store, and useDispatch to dispatch actions from the slice.
+-------------------------
+
+Functional component
+--------------------
+
+A functional component in React is a JavaScript function that returns JSX to define what the UI should look like.
+
+Characteristics of Functional Components:
+> Simple JavaScript functions
+> Accept props as arguments
+> Return JSX
+> Can use React Hooks (like useState, useEffect, etc.)
+> No this keyword (unlike class components)

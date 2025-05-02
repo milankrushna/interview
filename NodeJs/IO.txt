@@ -1,0 +1,23 @@
+I/O Operation in node js
+
+In Node.js, asynchronous I/O (input/output) operations are non-blocking tasks that interact with system resources, allowing the main thread to continue executing while waiting for these operations to complete.
+
+1. File System Operations (fs module):
+    Reading or writing files
+2. Network Requests:
+    HTTP/HTTPS server and client operations
+    TCP/UDP sockets
+3. Database Operations:
+    Querying MongoDB, MySQL, PostgreSQL, etc.
+    These use drivers that issue async I/O under the hood.
+4. Timers:
+    setTimeout, setInterval, and setImmediate (though not I/O in themselves, they behave asynchronously). These schedule operations for the event loop.
+5. DNS Lookups (dns module):
+    Performing asynchronous hostname lookups.
+6. Streams:
+    Reading from or writing to streams (e.g., files, HTTP requests/responses)
+    Streams emit data events asynchronously.
+7. Child Processes:
+    Spawning new processes or running shell commands
+8. Crypto Operations (crypto module):
+    Certain cryptographic operations (e.g., hashing, key derivation) can be done asynchronously using crypto APIs.
