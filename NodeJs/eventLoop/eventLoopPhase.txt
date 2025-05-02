@@ -1,0 +1,153 @@
+Summary Diagram of Order:
+
+1. Process microtasks (Promises, process.nextTick)
+2. Timers Phase
+3. Pending Callbacks
+4. Idle, Prepare
+5. Poll
+6. Check
+7. Close Callbacks
+
+
+1. Process microtasks (Promises, process.nextTick)
+--------------------------------------------------
+These aren't part of the main loop phases, but they’re executed immediately after the current operation and before the next event loop phase begins.
+
+Includes:
+Promise.then(), Promise.catch(), Promise.finally(), process.nextTick()
+
+Important: Microtasks are high priority. Too many microtasks can starve the event loop (e.g., infinite process.nextTick() calls can block I/O).
+
+If event loop starvation has ocure then Node never exits the microtask queue. It never returns to the event loop phases like timers, poll, or check. As a result, no I/O, timers, or other callbacks can run.
+
+{SampleCode:}
+-------------
+<code>
+    function blockEventLoop() {
+        process.nextTick(() => {
+        console.log('Tick');
+        blockEventLoop(); // Recursively schedules more ticks
+        });
+    }
+    
+    blockEventLoop();
+</code>
+
+How Can You Avoid This?
+***********************
+> Don’t recursively schedule microtasks without a break.
+> Use setImmediate() or setTimeout() to let the event loop breathe:
+
+{SampleCode:}
+-------------
+<code>
+    function saferLoop() {
+    process.nextTick(() => {
+        console.log('Tick');
+        setImmediate(saferLoop); // lets event loop continue
+    });
+    }
+
+    saferLoop();
+</code>
+
+Node doesn’t forcefully break that cycle — it's the developer’s job to avoid it.
+
+
+2. Timers Phase
+---------------
+What it does: Executes callbacks scheduled by setTimeout() and setInterval().
+
+How it works: When you set a timer, the callback is queued to run after the specified delay. In this phase, Node checks if any timers have expired, and runs their callbacks.
+
+Note: If the system is busy, timers might not fire exactly on time—but they will execute as soon as the delay has passed and the call stack is free.
+
+3. Pending Callbacks Phase
+--------------------------
+What it does: Executes I/O callbacks that were deferred to the next iteration of the event loop.
+
+Examples:
+> Some TCP errors
+> Certain fs module operations (though not all)
+
+Why it's needed: Some I/O operations can’t be completed in the same loop and need to wait until later.
+
+
+4. Idle, Prepare Phase
+----------------------
+
+What it does: This is a low-level, internal phase used by libuv (Node’s underlying library). These are not exposed to JavaScript directly but are used internally for event loop bookkeeping and setup tasks.
+
+This phase is split into two sub-phases:
+
+1. Idle Phase
+2. Prepare Phase
+
+What Happens Here Internally?
+
+>> Idle Phase:
+> Used to wait if there’s no immediate work to be done.
+> libuv may hold execution here briefly until the system is ready to move to the next phase.
+> It's a way to efficiently yield CPU time or wait for future work.
+
+>> Prepare Phase:
+> This is where libuv does setup work before the Poll Phase.
+> Prepares internal data structures or collects information about which I/O events are ready.
+> For example, libuv might:
+    . Check for expired timers
+    . Assess pending I/O handles
+    . Queue up any poll-ready callbacks
+
+
+5. Poll Phase
+-------------
+- Waits for new I/O events (e.g., reading from disk or network)
+- Executes their associated callbacks
+
+1. Waiting for I/O Events
+    > Node uses libuv to interface with the OS’s I/O capabilities (like epoll, kqueue, IOCP).
+    > This allows it to watch sockets, files, or other resources without blocking.
+    > The thread waits for events to occur (e.g., file read complete, HTTP request received).
+
+2. Executing I/O Callbacks
+    > When an I/O operation is complete (e.g., fs.readFile, net, http), its callback is executed here.
+    > This happens as soon as the system says it's ready, without busy-waiting or blocking.
+
+3. Efficient Scheduling
+    > If there are no events ready, Node may pause (block very briefly) to wait for something to happen.
+    > Otherwise, it continues to the next phase (check, etc.).
+
+<<<<<<<<<<<<<<<<<<<< The real Magic is realy happening here >>>>>>>>>>>>>>>>>>
+
+How Non blocking is happeing in Node js using {{epoll, kqueue, IOCP}}
+
+These are system-specific APIs that allow efficient, non-blocking I/O multiplexing — meaning they can monitor many file descriptors or sockets at once without blocking the process.
+
+epoll	                    | Linux
+kqueue	                    | macOS, FreeBSD
+IOCP (I/O Completion Ports)	| Windows
+
+How Node.js Uses Them?
+----------------------
+1. You call an async API like fs.readFile() or create a network server.
+2. Node.js hands the work to libuv, which registers interest in the I/O event (e.g., readiness to read from a socket).
+3. libuv uses epoll/kqueue/IOCP to tell the OS: "Let me know when this is ready."
+4. When the OS says "ready", libuv puts the callback in the Poll phase queue.
+5. Node.js executes the callback when it hits that phase of the event loop.
+
+|-------------------------------------------------------------
+|    Your JS Code ──▶ libuv ──▶ OS (epoll/kqueue/IOCP)      
+|                    ▲                   │                    
+|                    │◀───── Signals: "Data is ready"       
+|-------------------------------------------------------------
+
+
+5. Check Phase
+--------------
+What it does: Executes callbacks registered via setImmediate().
+Why it exists: setImmediate() is similar to setTimeout(fn, 0) but is specifically queued to run after the poll phase, making it predictable for certain operations.
+Use case: Helpful when you want to run a callback after I/O but before the event loop continues.
+
+6. Close Callbacks Phase
+What it does: Handles close events, such as: socket.on('close', ...), process.on('exit', ...)
+Triggered by: Closing of resources like network connections or file streams.
